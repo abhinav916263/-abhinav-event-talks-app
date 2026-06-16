@@ -1,8 +1,9 @@
 import re
 import html
+import time
 import urllib.request
 import xml.etree.ElementTree as ET
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request
 
 app = Flask(__name__)
 
@@ -97,16 +98,46 @@ def fetch_release_notes():
 def home():
     return render_template('index.html')
 
+cached_data = None
+cache_last_updated = 0
+CACHE_TIMEOUT = 900  # 15 minutes (in seconds)
+
 @app.route('/api/updates')
 def get_updates():
+    global cached_data, cache_last_updated
+    bypass_cache = request.args.get('refresh', 'false').lower() == 'true'
+    now = time.time()
+    
+    if not bypass_cache and cached_data is not None and (now - cache_last_updated) < CACHE_TIMEOUT:
+        return jsonify({
+            "status": "success",
+            "count": len(cached_data),
+            "data": cached_data,
+            "cached": True,
+            "cache_age_seconds": int(now - cache_last_updated)
+        })
+        
     try:
         data = fetch_release_notes()
+        cached_data = data
+        cache_last_updated = now
         return jsonify({
             "status": "success",
             "count": len(data),
-            "data": data
+            "data": data,
+            "cached": False
         })
     except Exception as e:
+        # Fallback to cache if network fails but cache exists
+        if cached_data is not None:
+            return jsonify({
+                "status": "success",
+                "count": len(cached_data),
+                "data": cached_data,
+                "cached": True,
+                "fallback": True,
+                "message": f"Failed to refresh feed, showing cached data. Error: {str(e)}"
+            })
         return jsonify({
             "status": "error",
             "message": str(e)

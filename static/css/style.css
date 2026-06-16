@@ -514,6 +514,41 @@ h1, h2, h3, h4 {
 .type-issue .type-badge { --type-bg: var(--color-issue-bg); }
 .type-deprecated .type-badge { --type-bg: var(--color-deprecated-bg); }
 
+/* Card Header Actions Wrapper */
+.update-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Copy Button on card */
+.btn-copy-action {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.4rem 0.9rem;
+    border-radius: 8px;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: var(--transition-smooth);
+}
+
+.btn-copy-action:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-copy-action-icon {
+    width: 14px;
+    height: 14px;
+}
+
 /* Tweet Button on card */
 .btn-tweet-action {
     background: rgba(29, 155, 240, 0.08);
@@ -540,6 +575,13 @@ h1, h2, h3, h4 {
 .btn-tweet-action-icon {
     width: 14px;
     height: 14px;
+}
+
+/* Modal Footer Actions Container */
+.modal-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
 }
 
 /* Update item content styling */

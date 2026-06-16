@@ -65,7 +65,7 @@ async function fetchReleaseNotes(isInitialLoad = false) {
     }
 
     try {
-        const response = await fetch('/api/updates');
+        const response = await fetch('/api/updates' + (isInitialLoad ? '' : '?refresh=true'));
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -75,7 +75,9 @@ async function fetchReleaseNotes(isInitialLoad = false) {
             releaseNotes = result.data;
             updateStats(releaseNotes);
             renderTimeline();
-            if (!isInitialLoad) {
+            if (result.fallback) {
+                showToast(result.message);
+            } else if (!isInitialLoad) {
                 showToast('Feed refreshed successfully!');
             }
         } else {
@@ -173,21 +175,43 @@ function renderTimeline() {
                 const card = document.createElement('div');
                 card.className = `update-item type-${update.type.toLowerCase()}`;
                 
-                // Add unique click interaction and layout
+                // Add unique click interaction and layout with Copy and Tweet buttons
                 card.innerHTML = `
                     <div class="update-item-header">
                         <span class="type-badge">${update.type}</span>
-                        <button class="btn-tweet-action" data-date="${day.date}" data-link="${day.link}" data-type="${update.type}">
-                            <svg class="btn-tweet-action-icon" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                            </svg>
-                            <span>Tweet Update</span>
-                        </button>
+                        <div class="update-card-actions">
+                            <button class="btn-copy-action" title="Copy clean update text to clipboard">
+                                <svg class="btn-copy-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                <span>Copy</span>
+                            </button>
+                            <button class="btn-tweet-action" data-date="${day.date}" data-link="${day.link}" data-type="${update.type}">
+                                <svg class="btn-tweet-action-icon" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                                </svg>
+                                <span>Tweet</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="update-item-body">
                         ${update.html}
                     </div>
                 `;
+                
+                // Add click listener to the Copy button
+                const copyBtn = card.querySelector('.btn-copy-action');
+                copyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const textToCopy = `📢 BigQuery Update (${day.date})\n[${update.type}] ${update.text}\n\nRead more: ${day.link}`;
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        showToast('Update copied to clipboard!');
+                    }).catch(err => {
+                        console.error('Copy failed', err);
+                        showToast('Failed to copy text.');
+                    });
+                });
                 
                 // Add click listener to the Tweet button
                 const tweetBtn = card.querySelector('.btn-tweet-action');
@@ -373,6 +397,20 @@ function setupEventListeners() {
             
             closeTweetComposer();
             showToast('Twitter window opened!');
+        });
+    }
+    
+    // Copy draft action
+    const copyDraftBtn = document.getElementById('copy-draft-btn');
+    if (copyDraftBtn) {
+        copyDraftBtn.addEventListener('click', () => {
+            const draftText = tweetTextarea.value;
+            navigator.clipboard.writeText(draftText).then(() => {
+                showToast('Draft copied to clipboard!');
+            }).catch(err => {
+                console.error('Copy failed', err);
+                showToast('Failed to copy draft.');
+            });
         });
     }
 }
